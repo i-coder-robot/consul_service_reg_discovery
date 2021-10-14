@@ -13,7 +13,7 @@ import (
 )
 
 type User struct {
-	ID       uint64    `json:"id"`
+	ID       uint64 `json:"id"`
 	Username string `json:"username"`
 	Foods    []food `json:"foods"`
 }
@@ -99,7 +99,7 @@ func UserFoods(w http.ResponseWriter, r *http.Request) {
 	}
 	u := User{
 		ID:       666,
-		Username: "欢喜-《Go语言极简一本通》|B站:面向加薪学习|公众号:面向加薪学习",
+		Username: "欢喜-《Go语言极简一本通》|B站:面向加薪学习|公众号:面向加薪学习|微信:write_code_666",
 	}
 	u.Foods = foods
 	w.Header().Set("Content-Type", "application/json")
