@@ -14,17 +14,17 @@ import (
 
 type User struct {
 	ID       uint64    `json:"id"`
-	Username string    `json:"username"`
-	Products []product `json:"products"`
+	Username string `json:"username"`
+	Foods    []food `json:"foods"`
 }
 
-type product struct {
+type food struct {
 	ID    uint64  `json:"id"`
 	Name  string  `json:"name"`
 	Price float64 `json:"price"`
 }
 
-func registerServiceWithConsul() {
+func registerService() {
 	config := consulApi.DefaultConfig()
 	consul, err := consulApi.NewClient(config)
 	if err != nil {
@@ -49,7 +49,7 @@ func registerServiceWithConsul() {
 	consul.Agent().ServiceRegister(registration)
 }
 
-func lookupServiceWithConsul(serviceName string) (string, error) {
+func lookupService(serviceName string) (string, error) {
 	config := consulApi.DefaultConfig()
 	consul, err := consulApi.NewClient(config)
 	if err != nil {
@@ -59,16 +59,16 @@ func lookupServiceWithConsul(serviceName string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	srvc := services["product-service"]
-	address := srvc.Address
-	port := srvc.Port
+	service := services["food-service"]
+	address := service.Address
+	port := service.Port
 	return fmt.Sprintf("http://%s:%v", address, port), nil
 }
 
 func main() {
-	registerServiceWithConsul()
+	registerService()
 	http.HandleFunc("/healthcheck", healthcheck)
-	http.HandleFunc("/user-products", UserProduct)
+	http.HandleFunc("/userFoods", UserFoods)
 	fmt.Printf("user service is up on port: %s", port())
 	http.ListenAndServe(port(), nil)
 }
@@ -77,31 +77,31 @@ func healthcheck(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, `user service is good`)
 }
 
-func UserProduct(w http.ResponseWriter, r *http.Request) {
-	var p []product
-	url, err := lookupServiceWithConsul("user-service")
+func UserFoods(w http.ResponseWriter, r *http.Request) {
+	var foods []food
+	url, err := lookupService("food-service")
 	fmt.Println("URL: ", url)
 	if err != nil {
 		fmt.Fprintf(w, "Error. %s", err)
 		return
 	}
 	client := &http.Client{}
-	resp, err := client.Get(url + "/products")
+	resp, err := client.Get(url + "/foods")
 	if err != nil {
 		fmt.Fprintf(w, "Error. %s", err)
 		return
 	}
 	defer resp.Body.Close()
 
-	if err := json.NewDecoder(resp.Body).Decode(&p); err != nil {
+	if err := json.NewDecoder(resp.Body).Decode(&foods); err != nil {
 		fmt.Fprintf(w, "Error. %s", err)
 		return
 	}
 	u := User{
-		ID:       1,
-		Username: "didiyudha@gmail.com",
+		ID:       666,
+		Username: "欢喜-《Go语言极简一本通》|B站:面向加薪学习|公众号:面向加薪学习",
 	}
-	u.Products = p
+	u.Foods = foods
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(&u)
 }

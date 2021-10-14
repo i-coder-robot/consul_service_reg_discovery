@@ -12,17 +12,13 @@ import (
 	consulapi "github.com/hashicorp/consul/api"
 )
 
-type product struct {
+type food struct {
 	ID    uint64  `json:"id"`
 	Name  string  `json:"name"`
 	Price float64 `json:"price"`
 }
 
-type ProductConfiguration struct {
-	Categories []string `json:"categories"`
-}
-
-func registerServiceWithConsul() {
+func RegisterService() {
 	config := consulapi.DefaultConfig()
 	consul, err := consulapi.NewClient(config)
 	if err != nil {
@@ -31,8 +27,8 @@ func registerServiceWithConsul() {
 
 	registration := new(consulapi.AgentServiceRegistration)
 
-	registration.ID = "product-service"
-	registration.Name = "product-service"
+	registration.ID = "food-service"
+	registration.Name = "food-service"
 	address := hostname()
 	registration.Address = address
 	port, err := strconv.Atoi(port()[1:len(port())])
@@ -54,22 +50,22 @@ func Configuration(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "Error. %s", err)
 		return
 	}
-	kvpair, _, err := consul.KV().Get("product-configuration", nil)
+	kv, _, err := consul.KV().Get("food-configuration", nil)
 	if err != nil {
 		fmt.Fprintf(w, "Error. %s", err)
 		return
 	}
-	if kvpair.Value == nil {
+	if kv.Value == nil {
 		fmt.Fprintf(w, "Configuration empty")
 		return
 	}
-	val := string(kvpair.Value)
+	val := string(kv.Value)
 	fmt.Fprintf(w, "%s", val)
 
 }
 
-func Products(w http.ResponseWriter, r *http.Request) {
-	products := []product{
+func FoodList(w http.ResponseWriter, r *http.Request) {
+	foods := []food{
 		{
 			ID:    1,
 			Name:  "牛排",
@@ -97,24 +93,24 @@ func Products(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(&products)
+	json.NewEncoder(w).Encode(&foods)
 }
 
 func main() {
-	registerServiceWithConsul()
+	RegisterService()
 	http.HandleFunc("/healthcheck", healthcheck)
-	http.HandleFunc("/products", Products)
-	http.HandleFunc("/product-configuration", Configuration)
-	fmt.Printf("product service is up on port: %s", port())
+	http.HandleFunc("/foods", FoodList)
+	http.HandleFunc("/food-configuration", Configuration)
+	fmt.Printf("food service is up on port: %s", port())
 	http.ListenAndServe(port(), nil)
 }
 
 func healthcheck(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, `product service is good`)
+	fmt.Fprintf(w, `ok`)
 }
 
 func port() string {
-	p := os.Getenv("PRODUCT_SERVICE_PORT")
+	p := os.Getenv("FOOD_SERVICE_PORT")
 	if len(strings.TrimSpace(p)) == 0 {
 		return ":8100"
 	}
